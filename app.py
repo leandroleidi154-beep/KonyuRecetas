@@ -209,7 +209,7 @@ if st.button("Ingresar al Sistema", type="primary", use_container_width=True):
 
     st.stop()  # <--- AGREGÁ ESTA LÍNEA ACÁ
 
-        st.caption("🔒 Credenciales de prueba: `sucu01` / `sucu123` | `mutuales` / `admin123`")
+    st.caption("🔒 Credenciales de prueba: `sucu01` / `sucu123` | `mutuales` / `admin123`")
     st.stop()
 
 usr_actual = st.session_state.usuario_autenticado
