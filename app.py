@@ -184,11 +184,11 @@ if "tickets_tildados" not in st.session_state:
 if st.session_state["usr_actual"] is None:
     col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
     with col_logo2:
-        mostrar_konyu("konyu_logo.png", caption="Konyu supervisando el sistema", width=180)
-        st.title("Konyu Recetas")
-        st.subheader("Control e Histórico de Recetas y Vales")
+        mostrar_konyu("konyu_logo.png", caption="Konyu supervisando el sistema", width=130)
+        st.markdown("<h2 style='text-align: center; margin-bottom: 0px;'>Konyu Recetas</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray; font-size: 0.9rem;'>Control e Histórico de Recetas y Vales</p>", unsafe_allow_html=True)
 
-        st.markdown("#### 🔒 Iniciar Sesión")
+        st.markdown("##### 🔒 Iniciar Sesión")
         user_input = st.text_input("Usuario", placeholder="Ej: sucu01 o mutuales")
         pass_input = st.text_input("Contraseña", type="password", placeholder="••••••••")
 
