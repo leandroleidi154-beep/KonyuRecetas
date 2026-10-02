@@ -191,14 +191,19 @@ if st.session_state.usuario_autenticado is None:
         user_input = st.text_input("Usuario", placeholder="Ej: sucu01 o mutuales")
         pass_input = st.text_input("Contraseña", type="password", placeholder="••••••••")
 
-        if st.button("Ingresar al Sistema", type="primary", use_container_width=True):
-            if user_input in USUARIOS_BASE and USUARIOS_BASE[user_input]["pass"] == pass_input:
-                st.session_state.usuario_autenticado = {
-                    "username": user_input,
-                    "nombre": USUARIOS_BASE[user_input]["nombre"],
-                    "rol": USUARIOS_BASE[user_input]["rol"],
-                }
-                st.success(f"¡Bienvenido, {USUARIOS_BASE[user_input]['nombre']}!")
+if st.button("Ingresar al Sistema", type="primary", use_container_width=True):
+    usuarios_actuales = cargar_usuarios()
+    
+    if user_input in usuarios_actuales and usuarios_actuales[user_input]["pass"] == pass_input:
+        st.session_state.usuario_autenticado = {
+            "username": user_input,
+            "nombre": usuarios_actuales[user_input]["nombre"],
+            "rol": usuarios_actuales[user_input]["rol"]
+        }
+        st.success(f"¡Bienvenido, {usuarios_actuales[user_input]['nombre']}!")
+        st.rerun()
+    else:
+        st.error("Usuario o contraseña incorrectos.")
                 st.rerun()
             else:
                 st.error("Usuario o contraseña incorrectos.")
