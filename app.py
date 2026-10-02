@@ -12,12 +12,15 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-# 1. Configuración de la página
+from pathlib import Path
+
+# Obtenemos la ruta de la imagen
+FAVICON_PATH = Path(__file__).parent / "assets" / "konyu_logo.png"
+
 st.set_page_config(
     page_title="Konyu Recetas",
-    page_icon="🐱",
-    layout="wide",
-    initial_sidebar_state="expanded",
+    page_icon=str(FAVICON_PATH) if FAVICON_PATH.exists() else "🐱",
+    layout="wide"
 )
 
 # Estilos CSS con paleta personalizada
@@ -122,7 +125,7 @@ if st.session_state.usuario_autenticado is None:
     col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
     with col_logo2:
         mostrar_konyu("konyu_logo.png", caption="Konyu supervisando el sistema", width=180)
-        st.title("🐱 Konyu Recetas")
+        st.title("Konyu Recetas")
         st.subheader("Control e Histórico de Recetas y Vales")
 
         st.markdown("### 🔐 Iniciar Sesión")
