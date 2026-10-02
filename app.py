@@ -91,6 +91,59 @@ def cargar_usuarios():
 def guardar_usuarios_dict(dict_usr):
     with open(ARCHIVO_USUARIOS, "w", encoding="utf-8") as f:
         json.dump(dict_usr, f, ensure_ascii=False, indent=4)
+        def guardar_usuarios_dict(dict_usr):
+    with open(ARCHIVO_USUARIOS, "w", encoding="utf-8") as f:
+        json.dump(dict_usr, f, ensure_ascii=False, indent=4)
+
+
+# --- PEGAR ACÁ (ENTRE LÍNEA 93 Y 94) ---
+def render_gestion_usuarios():
+    st.title("👤 Gestión y Alta de Usuarios")
+    st.caption("Panel exclusivo para crear y administrar accesos")
+    st.write("---")
+
+    usuarios_actuales = cargar_usuarios()
+
+    col_crear, col_lista = st.columns([1, 1])
+
+    with col_crear:
+        st.subheader("➕ Crear Nuevo Usuario")
+        nuevo_user = st.text_input("Usuario (Login)", placeholder="Ej: sucu01").strip().lower()
+        nuevo_nombre = st.text_input("Nombre visible / Sucursal", placeholder="Ej: Sucursal 01 - Centro")
+        nueva_clave = st.text_input("Contraseña", type="password")
+        nuevo_rol = st.selectbox("Rol", ["Sucursal", "Mutuales"])
+
+        if st.button("Guardar Usuario", type="primary"):
+            if not nuevo_user or not nuevo_nombre or not nueva_clave:
+                st.error("Completá todos los campos antes de guardar.")
+            elif nuevo_user in usuarios_actuales:
+                st.warning("Ese usuario ya existe. Elegí otro nombre de login.")
+            else:
+                usuarios_actuales[nuevo_user] = {
+                    "pass": nueva_clave,
+                    "nombre": nuevo_nombre,
+                    "rol": nuevo_rol
+                }
+                guardar_usuarios_dict(usuarios_actuales)
+                st.success(f"¡Usuario '{nuevo_nombre}' creado con éxito!")
+                st.rerun()
+
+    with col_lista:
+        st.subheader("📋 Usuarios Registrados")
+        lista_tabla = []
+        for u, datos in usuarios_actuales.items():
+            lista_tabla.append({
+                "Usuario": u,
+                "Nombre / Sucursal": datos["nombre"],
+                "Rol": datos["rol"]
+            })
+        st.dataframe(lista_tabla, use_container_width=True)
+
+
+# LUEGO SIGUE TU CÓDIGO EXISTENTE DE LA LÍNEA 94 EN ADELANTE:
+def cargar_json(filepath, columnas):
+    if os.path.exists(filepath):
+        ...
 def cargar_json(filepath, columnas):
     if os.path.exists(filepath):
         try:
