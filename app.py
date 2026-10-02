@@ -204,14 +204,11 @@ if st.button("Ingresar al Sistema", type="primary", use_container_width=True):
         }
         st.success(f"¡Bienvenido, {usr_data['nombre']}!")
         st.rerun()
-    else:
-        st.error("Usuario o contraseña incorrectos.")
+        else:
+            st.error("Usuario o contraseña incorrectos.")
 
-    st.stop()  # <--- AGREGÁ ESTA LÍNEA ACÁ
-
-    st.caption("🔒 Credenciales de prueba: `sucu01` / `sucu123` | `mutuales` / `admin123`")
+    st.caption("🔒 Credenciales de prueba: `sucu01` / `sucu123` | `mutuales` / `admin123` ")
     st.stop()
-
 usr_actual = st.session_state.get("usr_actual")
 
 # 3. Procesador de CSV Zweb
