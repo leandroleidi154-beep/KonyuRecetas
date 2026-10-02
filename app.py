@@ -77,7 +77,20 @@ COLUMNAS_CARGAS = [
 USUARIOS_BASE = {
     "admin": {"pass": "admin123", "nombre": "Administración Central", "rol": "Mutuales"}
 }
+# --- PERSISTENCIA DE USUARIOS ---
+ARCHIVO_USUARIOS = "usuarios.json"
+def cargar_usuarios():
+    if os.path.exists(ARCHIVO_USUARIOS):
+        try:
+            with open(ARCHIVO_USUARIOS, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return USUARIOS_BASE
+    return USUARIOS_BASE
 
+def guardar_usuarios_dict(dict_usr):
+    with open(ARCHIVO_USUARIOS, "w", encoding="utf-8") as f:
+        json.dump(dict_usr, f, ensure_ascii=False, indent=4)
 def cargar_json(filepath, columnas):
     if os.path.exists(filepath):
         try:
