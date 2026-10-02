@@ -174,13 +174,14 @@ def guardar_json(df, filepath):
         st.error(f"Error al guardar datos: {e}")
 
 # Manejo de Sesión
-if "usuario_autenticado" not in st.session_state:
-    st.session_state.usuario_autenticado = None
+if "usr_actual" not in st.session_state:
+    st.session_state["usr_actual"] = None
+
 if "tickets_tildados" not in st.session_state:
     st.session_state.tickets_tildados = set()
 
 # 2. Pantalla de Inicio de Sesión
-if st.session_state.usuario_autenticado is None:
+if st.session_state["usr_actual"] is None:
     col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
     with col_logo2:
         mostrar_konyu("konyu_logo.png", caption="Konyu supervisando el sistema", width=180)
@@ -205,6 +206,8 @@ if st.button("Ingresar al Sistema", type="primary", use_container_width=True):
         st.rerun()
     else:
         st.error("Usuario o contraseña incorrectos.")
+
+    st.stop()  # <--- AGREGÁ ESTA LÍNEA ACÁ
 
         st.caption("🔒 Credenciales de prueba: `sucu01` / `sucu123` | `mutuales` / `admin123`")
     st.stop()
