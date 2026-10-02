@@ -204,9 +204,6 @@ if st.button("Ingresar al Sistema", type="primary", use_container_width=True):
         st.rerun()
     else:
         st.error("Usuario o contraseña incorrectos.")
-                st.rerun()
-            else:
-                st.error("Usuario o contraseña incorrectos.")
 
         st.caption("🔒 Credenciales de prueba: `sucu01` / `sucu123` | `mutuales` / `admin123`")
     st.stop()
