@@ -75,10 +75,7 @@ COLUMNAS_CARGAS = [
 ]
 
 USUARIOS_BASE = {
-    "sucu01": {"pass": "sucu123", "nombre": "Sucursal 01 - Centro", "rol": "Sucursal"},
-    "sucu02": {"pass": "sucu123", "nombre": "Sucursal 02 - Norte", "rol": "Sucursal"},
-    "sucu03": {"pass": "sucu123", "nombre": "Sucursal 03 - Sur", "rol": "Sucursal"},
-    "mutuales": {"pass": "admin123", "nombre": "Sector Mutuales", "rol": "Mutuales"},
+    "admin": {"pass": "admin123", "nombre": "Administración Central", "rol": "Mutuales"}
 }
 
 def cargar_json(filepath, columnas):
