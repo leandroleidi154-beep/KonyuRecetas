@@ -212,7 +212,7 @@ if st.button("Ingresar al Sistema", type="primary", use_container_width=True):
     st.caption("🔒 Credenciales de prueba: `sucu01` / `sucu123` | `mutuales` / `admin123`")
     st.stop()
 
-usr_actual = st.session_state.usuario_autenticado
+usr_actual = st.session_state.get("usr_actual")
 
 # 3. Procesador de CSV Zweb
 def procesar_csv(file):
