@@ -416,7 +416,8 @@ def generar_pdf_cierre(df_resumen, df_recetas_fisicas, df_vales_generados, sucur
 with st.sidebar:
     mostrar_konyu("konyu_logo.png", caption="Konyu Recetas", width=90)
     st.title("🐱 Konyu Recetas")
-usr_actual = st.session_state.get("usr_actual", {})
+    
+    usr_actual = st.session_state.get("usr_actual", {})
     st.caption(f"👤 {usr_actual.get('nombre', 'Usuario')}")
     st.caption(f"Rol: {usr_actual.get('rol', '-')}")
 
