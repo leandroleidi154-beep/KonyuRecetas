@@ -422,7 +422,7 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
         )
 
         if col_del.button("🗑 Cancelar / Eliminar Lote", type="secondary", use_container_width=True):
-            df_cargas_nuevas = df_cargas[df_cargas["ID_Lote"] != id_lote_actual]
+            menu = st.radio("Navegación Mutuales", ["🕹️ Recepción de Lotes por Sucursal", "📜 Auditoría Global de Vales", "👤 Gestión de Usuarios"])
             guardar_json(df_cargas_nuevas, ARCHIVO_CARGAS)
 
             df_vales_nuevos = df_vales_repo[df_vales_repo["ID_Lote"] != id_lote_actual]
