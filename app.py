@@ -376,7 +376,7 @@ with st.sidebar:
     if usr_actual["rol"] == "Sucursal":
         menu = st.radio("Navegación Sucursal", ["📥 Carga Diaria de Lote", "📜 Gestión de Vales e Histórico"])
     else:
-        menu = st.radio("Navegación Mutuales", ["📥 Recepción de Lotes por Sucursal", "📦 Auditoría Global de Vales"])
+        menu = st.radio("Navegación Mutuales", ["🕹️ Recepción de Lotes por Sucursal", "📜 Auditoría Global de Vales", "👤 Gestión de Usuarios"])
 
 
 # 6. SUCURSAL - Carga Diaria
@@ -435,7 +435,6 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
         )
 
         if col_del.button("🗑 Cancelar / Eliminar Lote", type="secondary", use_container_width=True):
-            menu = st.radio("Navegación Mutuales", ["🕹️ Recepción de Lotes por Sucursal", "📜 Auditoría Global de Vales", "👤 Gestión de Usuarios"])
             guardar_json(df_cargas_nuevas, ARCHIVO_CARGAS)
 
             df_vales_nuevos = df_vales_repo[df_vales_repo["ID_Lote"] != id_lote_actual]
@@ -1006,3 +1005,6 @@ elif usr_actual["rol"] == "Mutuales" and menu == "📦 Auditoría Global de Vale
         else:
             mostrar_konyu("konyu_logo.png", caption="Konyu te orienta", width=100)
             st.info("📌 **Indicaciones:** Selecciona primero una sucursal y un día en el calendario para visualizar las métricas y la lista de vales correspondiente.")
+# 10. MUTUALES - Gestión de Usuarios
+elif usr_actual["rol"] == "Mutuales" and "Gestión de Usuarios" in menu:
+    render_gestion_usuarios()
