@@ -188,27 +188,28 @@ if st.session_state["usr_actual"] is None:
         st.title("Konyu Recetas")
         st.subheader("Control e Histórico de Recetas y Vales")
 
-        st.markdown("### 🔐 Iniciar Sesión")
+        st.markdown("### 🔒 Iniciar Sesión")
         user_input = st.text_input("Usuario", placeholder="Ej: sucu01 o mutuales")
         pass_input = st.text_input("Contraseña", type="password", placeholder="••••••••")
-if st.button("Ingresar al Sistema", type="primary", use_container_width=True):
-        usuarios_actuales = cargar_usuarios()
+
+        if st.button("Ingresar al Sistema", type="primary", use_container_width=True):
+            usuarios_actuales = cargar_usuarios()
+            if user_input in usuarios_actuales and usuarios_actuales[user_input]["pass"] == pass_input:
+                usr_data = usuarios_actuales[user_input]
+                st.session_state["usr_actual"] = {
+                    "username": user_input,
+                    "nombre": usr_data["nombre"],
+                    "rol": usr_data["rol"]
+                }
+                st.success(f"¡Bienvenido, {usr_data['nombre']}!")
+                st.rerun()
+            else:
+                st.error("Usuario o contraseña incorrectos.")
+
+        st.caption("🔒 Credenciales de prueba: `sucu01` / `sucu123` | `mutuales` / `admin123` ")
+
+        st.stop()  # <-- Este st.stop() DEBE ir con 4 espacios (fuera de col_logo2 pero DENTRO del if principal)
         
-        if user_input in usuarios_actuales and usuarios_actuales[user_input]["pass"] == pass_input:
-            usr_data = usuarios_actuales[user_input]
-            st.session_state["usr_actual"] = {
-                "username": user_input,
-                "nombre": usr_data["nombre"],
-                "rol": usr_data["rol"]
-            }
-            st.success(f"¡Bienvenido, {usr_data['nombre']}!")
-            st.rerun()
-        else:
-            st.error("Usuario o contraseña incorrectos.")
-
-            st.caption("🔒 Credenciales de prueba: `sucu01` / `sucu123` | `mutuales` / `admin123` ")
-            st.stop()
-
 # 3. Procesador de CSV Zweb
 def procesar_csv(file):
     recetas = []
