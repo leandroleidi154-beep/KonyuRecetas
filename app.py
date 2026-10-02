@@ -801,7 +801,11 @@ elif usr_actual["rol"] == "Mutuales" and menu == "📥 Recepción de Lotes por S
     df_cargas_global = cargar_json(ARCHIVO_CARGAS, COLUMNAS_CARGAS)
     df_vales_global = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
 
-    sucursales_base = [USUARIOS_BASE[u]["nombre"] for u in USUARIOS_BASE if USUARIOS_BASE[u]["rol"] == "Sucursal"]
+    usuarios_sistema = cargar_usuarios()
+    sucursales_base = [datos["nombre"] for datos in usuarios_sistema.values() if datos.get("rol") == "Sucursal"]
+
+    if not sucursales_base:
+        sucursales_base = ["Sin Sucursales"]
     
     col_sel_suc, col_fil_est = st.columns([3, 2])
     sucursal_seleccionada = col_sel_suc.selectbox("🏢 Seleccionar Sucursal a Auditar", sucursales_base)
