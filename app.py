@@ -371,8 +371,18 @@ with st.sidebar:
 
 # 6. SUCURSAL - Carga Diaria
 if usr_actual["rol"] == "Sucursal" and menu == "📥 Carga Diaria de Lote":
-    st.title("📥 Carga Diaria y Generación de Lote")
-    st.write(f"Sucursal activa: **{usr_actual['nombre']}**")
+   col_titulo, col_konyu = st.columns([3, 1])
+
+    with col_titulo:
+        st.title("🕹️ Carga Diaria y Generación de Lote")
+        st.write(f"Sucursal activa: **{usr_actual['nombre']}**")
+
+    with col_konyu:
+        ruta_acompana = os.path.join(os.path.dirname(__file__), "assets", "konyu_acompana.png")
+        if os.path.exists(ruta_acompana):
+            st.image(ruta_acompana, caption="Konyu te acompaña", width=110)
+        else:
+            st.caption("Konyu te acompaña")
 
     c_f1, c_f2 = st.columns([2, 2])
     fecha_carga = c_f1.date_input("Fecha de Carga del Lote", value=datetime.date.today())
