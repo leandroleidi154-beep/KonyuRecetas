@@ -206,8 +206,8 @@ if st.button("Ingresar al Sistema", type="primary", use_container_width=True):
         else:
             st.error("Usuario o contraseña incorrectos.")
 
-    st.caption("🔒 Credenciales de prueba: `sucu01` / `sucu123` | `mutuales` / `admin123` ")
-    st.stop()
+            st.caption("🔒 Credenciales de prueba: `sucu01` / `sucu123` | `mutuales` / `admin123` ")
+            st.stop()
 
 # 3. Procesador de CSV Zweb
 def procesar_csv(file):
