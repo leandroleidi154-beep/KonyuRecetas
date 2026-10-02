@@ -188,7 +188,7 @@ if st.session_state["usr_actual"] is None:
         st.title("Konyu Recetas")
         st.subheader("Control e Histórico de Recetas y Vales")
 
-        st.markdown("### 🔒 Iniciar Sesión")
+        st.markdown("#### 🔒 Iniciar Sesión")
         user_input = st.text_input("Usuario", placeholder="Ej: sucu01 o mutuales")
         pass_input = st.text_input("Contraseña", type="password", placeholder="••••••••")
 
