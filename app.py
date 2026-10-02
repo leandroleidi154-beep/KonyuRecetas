@@ -195,12 +195,13 @@ if st.button("Ingresar al Sistema", type="primary", use_container_width=True):
     usuarios_actuales = cargar_usuarios()
     
     if user_input in usuarios_actuales and usuarios_actuales[user_input]["pass"] == pass_input:
-        st.session_state.usuario_autenticado = {
+        usr_data = usuarios_actuales[user_input]
+        st.session_state["usr_actual"] = {
             "username": user_input,
-            "nombre": usuarios_actuales[user_input]["nombre"],
-            "rol": usuarios_actuales[user_input]["rol"]
+            "nombre": usr_data["nombre"],
+            "rol": usr_data["rol"]
         }
-        st.success(f"¡Bienvenido, {usuarios_actuales[user_input]['nombre']}!")
+        st.success(f"¡Bienvenido, {usr_data['nombre']}!")
         st.rerun()
     else:
         st.error("Usuario o contraseña incorrectos.")
@@ -415,11 +416,12 @@ def generar_pdf_cierre(df_resumen, df_recetas_fisicas, df_vales_generados, sucur
 with st.sidebar:
     mostrar_konyu("konyu_logo.png", caption="Konyu Recetas", width=90)
     st.title("🐱 Konyu Recetas")
-    st.caption(f"👤 {usr_actual['nombre']}")
-    st.caption(f"Rol: {usr_actual['rol']}")
+usr_actual = st.session_state.get("usr_actual", {})
+    st.caption(f"👤 {usr_actual.get('nombre', 'Usuario')}")
+    st.caption(f"Rol: {usr_actual.get('rol', '-')}")
 
     if st.button("🚪 Cerrar Sesión"):
-        st.session_state.usuario_autenticado = None
+        st.session_state["usr_actual"] = None
         st.rerun()
 
     st.divider()
