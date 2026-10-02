@@ -91,10 +91,6 @@ def cargar_usuarios():
 def guardar_usuarios_dict(dict_usr):
     with open(ARCHIVO_USUARIOS, "w", encoding="utf-8") as f:
         json.dump(dict_usr, f, ensure_ascii=False, indent=4)
-        def guardar_usuarios_dict(dict_usr):
-    with open(ARCHIVO_USUARIOS, "w", encoding="utf-8") as f:
-        json.dump(dict_usr, f, ensure_ascii=False, indent=4)
-
 
 # --- PEGAR ACÁ (ENTRE LÍNEA 93 Y 94) ---
 def render_gestion_usuarios():
