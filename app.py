@@ -383,7 +383,7 @@ if usr_actual["rol"] == "Sucursal" and menu == "🕹️ Carga Diaria de Lote":
             st.image(ruta_acompana, caption="Konyu te acompaña", width=110)
         else:
             st.caption("🐱 Konyu te acompaña")
-            
+
     c_f1, c_f2 = st.columns([2, 2])
     fecha_carga = c_f1.date_input("Fecha de Carga del Lote", value=datetime.date.today())
     archivo_csv = c_f2.file_uploader("Cargar CSV de Zweb", type=["csv"])
