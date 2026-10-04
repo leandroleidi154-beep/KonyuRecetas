@@ -725,7 +725,7 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
                     }
 
                         # En lugar de guardar en el DataFrame local y llamar a guardar_json, guardás directamente en Supabase:
-                        supabase.table("cargas").upsert(nuevo_lote).execute()
+                    supabase.table("cargas").upsert(nuevo_lote).execute()
                         df_cargas_actualizado = pd.concat([df_cargas, pd.DataFrame([nuevo_lote])], ignore_index=True).drop_duplicates(subset=["ID_Lote"])
                         guardar_json(df_cargas_actualizado, ARCHIVO_CARGAS)
 
