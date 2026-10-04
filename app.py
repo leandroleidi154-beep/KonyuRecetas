@@ -532,9 +532,9 @@ if not lote_cerrado.empty:
             supabase.table("cargas").delete().eq("id_lote", id_lote_actual).execute()
             st.warning(f"Lote `{id_lote_actual}` fue cancelado/eliminado correctamente.")
             st.rerun()
-    else:
-        if archivo_csv is not None:
-            df_recetas = procesar_csv(archivo_csv)
+else:
+    if archivo_csv is not None:
+        df_recetas = procesar_csv(archivo_csv)
 
             if not df_recetas.empty:
                 df_vales_repo = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
