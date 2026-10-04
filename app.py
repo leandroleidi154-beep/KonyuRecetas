@@ -519,15 +519,15 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
             use_container_width=True
         )
 
-        if col_del.button("🗑 Cancelar / Eliminar Lote", type="secondary", use_container_width=True):
-            guardar_json(df_cargas_nuevas, ARCHIVO_CARGAS)
-
-            df_vales_nuevos = df_vales_repo[df_vales_repo["ID_Lote"] != id_lote_actual]
-            guardar_json(df_vales_nuevos, ARCHIVO_VALES)
-
-            st.warning(f"Lote `{id_lote_actual}` fue cancelado/eliminado correctamente.")
-            st.rerun()
-
+    if col_del.button("🗑 Cancelar / Eliminar Lote", type="secondary", use_container_width=True):
+        # 1. Eliminar la carga de la tabla cargas en Supabase
+        supabase.table("cargas").delete().eq("id_lote", id_lote_actual).execute()
+        
+        # 2. Si también guardás los vales en Supabase (tabla vales), desasocialos o elimínalos
+        # supabase.table("vales").delete().eq("id_lote", id_lote_actual).execute()
+    
+        st.warning(f"Lote `{id_lote_actual}` fue cancelado/eliminado correctamente.")
+        st.rerun()
     else:
         if archivo_csv is not None:
             df_recetas = procesar_csv(archivo_csv)
