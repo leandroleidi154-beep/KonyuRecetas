@@ -726,10 +726,17 @@ if not lote_cerrado.empty:
                 f"Lote `{id_lote_actual}` fue cancelado/eliminado correctamente."
             )
             st.rerun()
-# Le decimos a Streamlit que si el lote ya estaba cerrado, TERMINE ACÁ
-if not lote_cerrado.empty:
-    st.info(f"🔒 El lote `{id_lote_actual}` ya fue cerrado y procesado.")
-    st.stop()
+
+# 1. Primero procesamos el CSV si el usuario subió uno
+if archivo_csv is not None:
+    df_recetas = procesar_csv(archivo_csv)
+
+    # SOLO si la base de datos confirma que el lote ya está cerrado/enviado, se detiene
+    if not lote_cerrado.empty:
+        estado = lote_cerrado.iloc[0].get("estado_lote", "")
+        if estado in ["CERRADO", "ENVIADO"]:
+            st.info(f"🔒 El Lote `{id_lote_actual}` ya fue cerrado y procesado.")
+            st.stop()
 
     if archivo_csv is not None:
         df_recetas = procesar_csv(archivo_csv)
