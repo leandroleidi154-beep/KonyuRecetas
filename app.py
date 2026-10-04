@@ -485,32 +485,32 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
 
     id_lote_actual = f"LOTE-{usr_actual['username'].upper()}-{fecha_carga.strftime('%Y%m%d')}"
 
-# Consulta a Supabase para traer la lista de cargas
-res_cargas = supabase.table("cargas").select("*").execute()
-df_cargas = pd.DataFrame(res_cargas.data) if res_cargas.data else pd.DataFrame()
-
-# Buscar si existe el lote actual
-if not df_cargas.empty and "id_lote" in df_cargas.columns:
-    lote_cerrado = df_cargas[df_cargas["id_lote"] == id_lote_actual]
-else:
-    lote_cerrado = pd.DataFrame()
-
-if not lote_cerrado.empty:
-    lote_row = lote_cerrado.iloc[0]
-    estado_lote_s = lote_row.get("estado_lote", "PENDIENTE")
-    st.success(f"🔒 El Lote para la fecha **{fecha_carga}** (`{id_lote_actual}`) se encuentra **CERRADO Y PROCESADO**. Estado: **{estado_lote_s}**.")
-
-    c_i1, c_i2, c_i3 = st.columns(3)
-    c_i1.metric("Total Recetas Zweb", lote_row.get("total_recetas", 0))
-    c_i2.metric("Físico Enviado", lote_row.get("fisico_enviado", 0))
-    c_i3.metric("Vales Registrados", lote_row.get("vales_generados", 0))
-
-    st.divider()
-    df_vales_repo = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
-    vales_del_lote = df_vales_repo[df_vales_repo["ID_Lote"] == id_lote_actual] if not df_vales_repo.empty else pd.DataFrame()
-
-    df_resumen_lote = preparar_df_resumen(lote_row.get("desglose_obra_social", "{}"))
-    df_recetas_fisicas_lote = preparar_df_recetas_fisicas(lote_row.get("detalle_recetas_fisicas", "[]"))
+        # Consulta a Supabase para traer la lista de cargas
+    res_cargas = supabase.table("cargas").select("*").execute()
+    df_cargas = pd.DataFrame(res_cargas.data) if res_cargas.data else pd.DataFrame()
+        
+        # Buscar si existe el lote actual
+        if not df_cargas.empty and "id_lote" in df_cargas.columns:
+            lote_cerrado = df_cargas[df_cargas["id_lote"] == id_lote_actual]
+        else:
+            lote_cerrado = pd.DataFrame()
+        
+        if not lote_cerrado.empty:
+            lote_row = lote_cerrado.iloc[0]
+            estado_lote_s = lote_row.get("estado_lote", "PENDIENTE")
+            st.success(f"🔒 El Lote para la fecha **{fecha_carga}** (`{id_lote_actual}`) se encuentra **CERRADO Y PROCESADO**. Estado: **{estado_lote_s}**.")
+        
+            c_i1, c_i2, c_i3 = st.columns(3)
+            c_i1.metric("Total Recetas Zweb", lote_row.get("total_recetas", 0))
+            c_i2.metric("Físico Enviado", lote_row.get("fisico_enviado", 0))
+            c_i3.metric("Vales Registrados", lote_row.get("vales_generados", 0))
+        
+            st.divider()
+            df_vales_repo = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
+            vales_del_lote = df_vales_repo[df_vales_repo["ID_Lote"] == id_lote_actual] if not df_vales_repo.empty else pd.DataFrame()
+        
+            df_resumen_lote = preparar_df_resumen(lote_row.get("desglose_obra_social", "{}"))
+            df_recetas_fisicas_lote = preparar_df_recetas_fisicas(lote_row.get("detalle_recetas_fisicas", "[]"))
 
         col_pdf, col_del = st.columns([3, 2])
         
