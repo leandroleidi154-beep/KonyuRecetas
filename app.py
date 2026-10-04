@@ -653,9 +653,8 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
     archivo_csv = c_f2.file_uploader("Cargar CSV de Zweb", type=["csv"])
 
 # Definición por defecto para evitar NameError
-id_lote_actual = (
-    f"LOTE-{usr_actual['username'].upper()}-{fecha_carga.strftime('%Y%m%d')}"
-)
+usuario_nombre = usr_actual.get("username") or usr_actual.get("nombre", "SUCURSAL")
+id_lote_actual = f"LOTE-{str(usuario_nombre).upper()}-{fecha_carga.strftime('%Y%m%d')}"
 
 # Consulta a Supabase para traer la lista de cargas
 res_cargas = supabase.table("cargas").select("*").execute()
