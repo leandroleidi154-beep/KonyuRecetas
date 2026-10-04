@@ -5,13 +5,20 @@ import os
 import re
 import pandas as pd
 import streamlit as st
-
 from supabase import create_client, Client
 
-# Inicializar cliente de Supabase usando los secrets de Streamlit
-url: str = st.secrets["supabase"]["SUPABASE_URL"]
-key: str = st.secrets["supabase"]["SUPABASE_KEY"]
-supabase: Client = create_client(url, key)
+# --- INICIALIZACIÓN SEGURA DE SUPABASE ---
+supabase: Client = None
+
+try:
+    if "supabase" in st.secrets and "SUPABASE_URL" in st.secrets["supabase"]:
+        url: str = st.secrets["supabase"]["SUPABASE_URL"]
+        key: str = st.secrets["supabase"]["SUPABASE_KEY"]
+        supabase = create_client(url, key)
+    else:
+        st.error("⚠️ Falta la sección [supabase] en Streamlit Secrets.")
+except Exception as e:
+    st.error(f"⚠️ Error al conectar con Supabase: {e}")
 
 # Importaciones para ReportLab (PDF)
 from reportlab.lib import colors
