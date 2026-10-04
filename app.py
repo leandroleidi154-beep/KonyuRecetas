@@ -512,12 +512,13 @@ if not lote_cerrado.empty:
     df_resumen_lote = preparar_df_resumen(lote_row.get("desglose_obra_social", "{}"))
     df_recetas_fisicas_lote = preparar_df_recetas_fisicas(lote_row.get("detalle_recetas_fisicas", "[]"))
 
-        col_pdf, col_del = st.columns([3, 2])
-        
+    col_pdf, col_del = st.columns([3, 2])
+
+    with col_pdf:
         pdf_bytes = generar_pdf_cierre(
             df_resumen_lote, df_recetas_fisicas_lote, vales_del_lote, usr_actual["nombre"], str(fecha_carga)
         )
-        col_pdf.download_button(
+        st.download_button(
             "📄 Descargar Planilla PDF de Cierre de este Lote",
             data=pdf_bytes,
             file_name=f"Cierre_{usr_actual['username']}_{fecha_carga}.pdf",
@@ -526,15 +527,11 @@ if not lote_cerrado.empty:
             use_container_width=True
         )
 
-    if col_del.button("🗑 Cancelar / Eliminar Lote", type="secondary", use_container_width=True):
-        # 1. Eliminar la carga de la tabla cargas en Supabase
-        supabase.table("cargas").delete().eq("id_lote", id_lote_actual).execute()
-        
-        # 2. Si también guardás los vales en Supabase (tabla vales), desasocialos o elimínalos
-        # supabase.table("vales").delete().eq("id_lote", id_lote_actual).execute()
-    
-        st.warning(f"Lote `{id_lote_actual}` fue cancelado/eliminado correctamente.")
-        st.rerun()
+    with col_del:
+        if st.button("🗑 Cancelar / Eliminar Lote", type="secondary", use_container_width=True):
+            supabase.table("cargas").delete().eq("id_lote", id_lote_actual).execute()
+            st.warning(f"Lote `{id_lote_actual}` fue cancelado/eliminado correctamente.")
+            st.rerun()
     else:
         if archivo_csv is not None:
             df_recetas = procesar_csv(archivo_csv)
