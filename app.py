@@ -532,208 +532,210 @@ if not lote_cerrado.empty:
             supabase.table("cargas").delete().eq("id_lote", id_lote_actual).execute()
             st.warning(f"Lote `{id_lote_actual}` fue cancelado/eliminado correctamente.")
             st.rerun()
-else:
-    if archivo_csv is not None:
-        df_recetas = procesar_csv(archivo_csv)
+    # 🛑 Le decimos a Streamlit que si el lote ya estaba cerrado, TERMINE ACÁ
+    st.stop()
 
-        if not df_recetas.empty:
-            df_vales_repo = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
-            df_vales_sucu_historial = df_vales_repo[df_vales_repo["Sucursal"] == usr_actual["nombre"]] if not df_vales_repo.empty else pd.DataFrame()
+if archivo_csv is not None:
+df_recetas = procesar_csv(archivo_csv)
 
-            dict_vales_existentes = {}
-            if not df_vales_sucu_historial.empty:
-                for _, row_v in df_vales_sucu_historial.iterrows():
-                    dict_vales_existentes[row_v["N_Ticket"]] = {
-                        "ID_Vale": row_v["ID_Vale"],
-                        "Fecha": row_v["Fecha_Origen"],
-                        "Estado": row_v["Estado"],
-                    }
+if not df_recetas.empty:
+    df_vales_repo = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
+    df_vales_sucu_historial = df_vales_repo[df_vales_repo["Sucursal"] == usr_actual["nombre"]] if not df_vales_repo.empty else pd.DataFrame()
 
-            df_recetas["Ya_Tiene_Vale"] = df_recetas["N° Ticket"].isin(dict_vales_existentes.keys())
+    dict_vales_existentes = {}
+    if not df_vales_sucu_historial.empty:
+        for _, row_v in df_vales_sucu_historial.iterrows():
+            dict_vales_existentes[row_v["N_Ticket"]] = {
+                "ID_Vale": row_v["ID_Vale"],
+                "Fecha": row_v["Fecha_Origen"],
+                "Estado": row_v["Estado"],
+            }
 
-            total_recetas_zweb = len(df_recetas)
-            vales_preexistentes_count = df_recetas["Ya_Tiene_Vale"].sum()
-            esperado_fisico = total_recetas_zweb - vales_preexistentes_count
+    df_recetas["Ya_Tiene_Vale"] = df_recetas["N° Ticket"].isin(dict_vales_existentes.keys())
 
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Total Recetas Zweb", total_recetas_zweb)
-            col2.metric("Vales Ya Registrados (Previos)", vales_preexistentes_count)
+    total_recetas_zweb = len(df_recetas)
+    vales_preexistentes_count = df_recetas["Ya_Tiene_Vale"].sum()
+    esperado_fisico = total_recetas_zweb - vales_preexistentes_count
 
-            if vales_preexistentes_count > 0:
-                st.info(f"💡 Se detectaron **{vales_preexistentes_count}** receta(s)** en el CSV que ya fueron convertidas en Vale anteriormente.")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Recetas Zweb", total_recetas_zweb)
+    col2.metric("Vales Ya Registrados (Previos)", vales_preexistentes_count)
 
-            st.divider()
+    if vales_preexistentes_count > 0:
+        st.info(f"💡 Se detectaron **{vales_preexistentes_count}** receta(s)** en el CSV que ya fueron convertidas en Vale anteriormente.")
 
-            # PASO 1
-            st.subheader("1. Conteo Físico por Obra Social")
-            resumen = df_recetas[~df_recetas["Ya_Tiene_Vale"]].groupby("Obra Social").size().reset_index(name="Físico Esperado")
+    st.divider()
 
-            conteo_real_dict = {}
+    # PASO 1
+    st.subheader("1. Conteo Físico por Obra Social")
+    resumen = df_recetas[~df_recetas["Ya_Tiene_Vale"]].groupby("Obra Social").size().reset_index(name="Físico Esperado")
 
-            for idx, row in resumen.iterrows():
-                os_nombre = row["Obra Social"]
-                esperado = row["Físico Esperado"]
+    conteo_real_dict = {}
 
-                c_os1, c_os2, c_os3, c_os4 = st.columns([3, 2, 2, 3])
-                c_os1.markdown(f"**{os_nombre}**")
-                c_os2.caption(f"Esperado: {esperado}")
-                    
-                    enviado_real = c_os3.number_input(
-                        f"Real {os_nombre}", 
-                        min_value=0, 
-                        max_value=esperado, 
-                        value=esperado, 
-                        key=f"inp_{os_nombre}"
-                    )
-                    conteo_real_dict[os_nombre] = enviado_real
+    for idx, row in resumen.iterrows():
+        os_nombre = row["Obra Social"]
+        esperado = row["Físico Esperado"]
 
-                    diferencia = enviado_real - esperado
-                    if diferencia < 0:
-                        c_os4.warning(f"⚠ Faltan {abs(diferencia)} receta(s)")
+        c_os1, c_os2, c_os3, c_os4 = st.columns([3, 2, 2, 3])
+        c_os1.markdown(f"**{os_nombre}**")
+        c_os2.caption(f"Esperado: {esperado}")
+            
+            enviado_real = c_os3.number_input(
+                f"Real {os_nombre}", 
+                min_value=0, 
+                max_value=esperado, 
+                value=esperado, 
+                key=f"inp_{os_nombre}"
+            )
+            conteo_real_dict[os_nombre] = enviado_real
+
+            diferencia = enviado_real - esperado
+            if diferencia < 0:
+                c_os4.warning(f"⚠ Faltan {abs(diferencia)} receta(s)")
+            else:
+                c_os4.success("✅ OK")
+
+        st.divider()
+
+        # PASO 2
+        st.subheader("2. Selección de Recetas para Convertir en Vale")
+        
+        df_disponibles = df_recetas.copy()
+        
+        def obtener_estado_vale(row):
+            t = row["N° Ticket"]
+            if t in dict_vales_existentes:
+                info = dict_vales_existentes[t]
+                return f"⚠ REGISTRADO ({info['ID_Vale']} - {info['Fecha']} [{info['Estado']}])"
+            return "Disponible"
+
+        df_disponibles["Estado_Historial"] = df_disponibles.apply(obtener_estado_vale, axis=1)
+        st.session_state.tickets_tildados = {t for t in st.session_state.tickets_tildados if t not in dict_vales_existentes}
+
+        col_busq1, col_busq2 = st.columns([3, 1])
+        busqueda_receta = col_busq1.text_input(
+            "🔍 Buscar receta por Ticket, T.T u Obra Social",
+            placeholder="Ej: 0908-00525809 o JERARQUICOS...",
+            key="busq_receta_lote"
+        )
+        if busqueda_receta:
+            if col_busq2.button("Limpiar Búsqueda", use_container_width=True):
+                st.session_state.busq_receta_lote = ""
+                st.rerun()
+
+        df_filtrado_vista = df_disponibles.copy()
+        if busqueda_receta:
+            q = busqueda_receta.strip().lower()
+            df_filtrado_vista = df_filtrado_vista[
+                df_filtrado_vista["N° Ticket"].astype(str).str.lower().str.contains(q) |
+                df_filtrado_vista["T.T (Tramitación)"].astype(str).str.lower().str.contains(q) |
+                df_filtrado_vista["Obra Social"].astype(str).str.lower().str.contains(q) |
+                df_filtrado_vista["Plan"].astype(str).str.lower().str.contains(q)
+            ]
+
+        df_filtrado_vista["Marcar_Vale"] = df_filtrado_vista["N° Ticket"].isin(st.session_state.tickets_tildados)
+
+        edited_df = st.data_editor(
+            df_filtrado_vista[["Obra Social", "Plan", "N° Ticket", "T.T (Tramitación)", "Estado_Historial", "Marcar_Vale"]],
+            column_config={
+                "Estado_Historial": st.column_config.TextColumn("Estado en Histórico"),
+                "Marcar_Vale": st.column_config.CheckboxColumn("¿Convertir en Vale?", default=False)
+            },
+            disabled=["Obra Social", "Plan", "N° Ticket", "T.T (Tramitación)", "Estado_Historial"],
+            hide_index=True,
+            use_container_width=True,
+            key="editor_vales_sucu",
+        )
+
+        if "editor_vales_sucu" in st.session_state and "edited_rows" in st.session_state.editor_vales_sucu:
+            for idx, cambios in st.session_state.editor_vales_sucu["edited_rows"].items():
+                if "Marcar_Vale" in cambios:
+                    ticket_afectado = df_filtrado_vista.iloc[idx]["N° Ticket"]
+                    if ticket_afectado in dict_vales_existentes:
+                        st.error(f"🚫 El ticket {ticket_afectado} ya fue convertido en vale anteriormente.")
                     else:
-                        c_os4.success("✅ OK")
+                        if cambios["Marcar_Vale"]:
+                            st.session_state.tickets_tildados.add(ticket_afectado)
+                        else:
+                            st.session_state.tickets_tildados.discard(ticket_afectado)
 
-                st.divider()
+        df_seleccionados = df_recetas[
+            (df_recetas["N° Ticket"].isin(st.session_state.tickets_tildados)) &
+            (~df_recetas["Ya_Tiene_Vale"])
+        ].copy()
 
-                # PASO 2
-                st.subheader("2. Selección de Recetas para Convertir en Vale")
+        motivo_general = "Medicamento pendiente de entrega"
+        if not df_seleccionados.empty:
+            st.markdown(f"**Recetas tildadas en este lote para Vale:** `{len(df_seleccionados)}`")
+            motivo_general = st.text_input("Motivo general de los vales", value=motivo_general)
+
+        st.divider()
+
+        # PASO 3
+        st.subheader("3. Confirmación y Cierre del Lote")
+
+        total_fisico_enviar = sum(conteo_real_dict.values())
+        cant_vales_a_crear = len(df_seleccionados)
+
+        df_recetas_fisicas_enviadas = df_recetas[
+            (~df_recetas["N° Ticket"].isin(st.session_state.tickets_tildados)) &
+            (~df_recetas["Ya_Tiene_Vale"])
+        ][["Obra Social", "Plan", "N° Ticket", "T.T (Tramitación)"]].copy()
+
+        st.warning(
+            f"📋 **Resumen Final de Cierre:**  \n"
+            f"• **Recetas Físicas a Enviar:** {total_fisico_enviar}  \n"
+            f"• **Nuevos Vales a Registrar:** {cant_vales_a_crear}"
+        )
+
+        if st.button("🔒 CONFIRMAR Y CERRAR LOTE DEL DÍA", type="primary", use_container_width=True):
+            tickets_duplicados_intentados = [t for t in st.session_state.tickets_tildados if t in dict_vales_existentes]
+            
+            if tickets_duplicados_intentados:
+                st.error(f"⛔ ERROR DE SEGURIDAD: Los siguientes tickets ya existen en el repositorio: {', '.join(tickets_duplicados_intentados)}.")
+            else:
+                cant_existentes = len(df_vales_repo)
+                nuevos_vales = []
                 
-                df_disponibles = df_recetas.copy()
+                for i, (_, fila) in enumerate(df_seleccionados.iterrows()):
+                    nuevos_vales.append({
+                        "ID_Vale": f"VALE-{cant_existentes + i + 1:04d}",
+                        "ID_Lote": id_lote_actual,
+                        "Sucursal": usr_actual["nombre"],
+                        "Fecha_Origen": str(fecha_carga),
+                        "Obra_Social": fila["Obra Social"],
+                        "Plan": fila["Plan"],
+                        "N_Ticket": fila["N° Ticket"],
+                        "TT_Tramitacion": fila["T.T (Tramitación)"],
+                        "Motivo": motivo_general,
+                        "Estado": "PENDIENTE",
+                        "Fecha_Resolucion": "-",
+                        "Observacion": "-",
+                    })
+
+                if nuevos_vales:
+                    df_vales_actualizado = pd.concat([df_vales_repo, pd.DataFrame(nuevos_vales)], ignore_index=True)
+                    guardar_json(df_vales_actualizado, ARCHIVO_VALES)
+
+            nuevo_lote = {
+                "id_lote": id_lote_actual,
+                "sucursal": usr_actual["nombre"],
+                "fecha_carga": str(fecha_carga),
+                "total_recetas": total_recetas_zweb,
+                "fisico_enviado": total_fisico_enviar,
+                "vales_generados": cant_vales_a_crear,
+                "estado_lote": "ENVIADO",
+                "desglose_obra_social": json.dumps(conteo_real_dict, ensure_ascii=False),
+                "detalle_recetas_fisicas": json.dumps(df_recetas_fisicas_enviadas.to_dict(orient="records"), ensure_ascii=False)
+            }
+
+            # En lugar de guardar en el DataFrame local y llamar a guardar_json, guardás directamente en Supabase:
+            supabase.table("cargas").upsert(nuevo_lote).execute()
                 
-                def obtener_estado_vale(row):
-                    t = row["N° Ticket"]
-                    if t in dict_vales_existentes:
-                        info = dict_vales_existentes[t]
-                        return f"⚠ REGISTRADO ({info['ID_Vale']} - {info['Fecha']} [{info['Estado']}])"
-                    return "Disponible"
-
-                df_disponibles["Estado_Historial"] = df_disponibles.apply(obtener_estado_vale, axis=1)
-                st.session_state.tickets_tildados = {t for t in st.session_state.tickets_tildados if t not in dict_vales_existentes}
-
-                col_busq1, col_busq2 = st.columns([3, 1])
-                busqueda_receta = col_busq1.text_input(
-                    "🔍 Buscar receta por Ticket, T.T u Obra Social",
-                    placeholder="Ej: 0908-00525809 o JERARQUICOS...",
-                    key="busq_receta_lote"
-                )
-                if busqueda_receta:
-                    if col_busq2.button("Limpiar Búsqueda", use_container_width=True):
-                        st.session_state.busq_receta_lote = ""
-                        st.rerun()
-
-                df_filtrado_vista = df_disponibles.copy()
-                if busqueda_receta:
-                    q = busqueda_receta.strip().lower()
-                    df_filtrado_vista = df_filtrado_vista[
-                        df_filtrado_vista["N° Ticket"].astype(str).str.lower().str.contains(q) |
-                        df_filtrado_vista["T.T (Tramitación)"].astype(str).str.lower().str.contains(q) |
-                        df_filtrado_vista["Obra Social"].astype(str).str.lower().str.contains(q) |
-                        df_filtrado_vista["Plan"].astype(str).str.lower().str.contains(q)
-                    ]
-
-                df_filtrado_vista["Marcar_Vale"] = df_filtrado_vista["N° Ticket"].isin(st.session_state.tickets_tildados)
-
-                edited_df = st.data_editor(
-                    df_filtrado_vista[["Obra Social", "Plan", "N° Ticket", "T.T (Tramitación)", "Estado_Historial", "Marcar_Vale"]],
-                    column_config={
-                        "Estado_Historial": st.column_config.TextColumn("Estado en Histórico"),
-                        "Marcar_Vale": st.column_config.CheckboxColumn("¿Convertir en Vale?", default=False)
-                    },
-                    disabled=["Obra Social", "Plan", "N° Ticket", "T.T (Tramitación)", "Estado_Historial"],
-                    hide_index=True,
-                    use_container_width=True,
-                    key="editor_vales_sucu",
-                )
-
-                if "editor_vales_sucu" in st.session_state and "edited_rows" in st.session_state.editor_vales_sucu:
-                    for idx, cambios in st.session_state.editor_vales_sucu["edited_rows"].items():
-                        if "Marcar_Vale" in cambios:
-                            ticket_afectado = df_filtrado_vista.iloc[idx]["N° Ticket"]
-                            if ticket_afectado in dict_vales_existentes:
-                                st.error(f"🚫 El ticket {ticket_afectado} ya fue convertido en vale anteriormente.")
-                            else:
-                                if cambios["Marcar_Vale"]:
-                                    st.session_state.tickets_tildados.add(ticket_afectado)
-                                else:
-                                    st.session_state.tickets_tildados.discard(ticket_afectado)
-
-                df_seleccionados = df_recetas[
-                    (df_recetas["N° Ticket"].isin(st.session_state.tickets_tildados)) &
-                    (~df_recetas["Ya_Tiene_Vale"])
-                ].copy()
-
-                motivo_general = "Medicamento pendiente de entrega"
-                if not df_seleccionados.empty:
-                    st.markdown(f"**Recetas tildadas en este lote para Vale:** `{len(df_seleccionados)}`")
-                    motivo_general = st.text_input("Motivo general de los vales", value=motivo_general)
-
-                st.divider()
-
-                # PASO 3
-                st.subheader("3. Confirmación y Cierre del Lote")
-
-                total_fisico_enviar = sum(conteo_real_dict.values())
-                cant_vales_a_crear = len(df_seleccionados)
-
-                df_recetas_fisicas_enviadas = df_recetas[
-                    (~df_recetas["N° Ticket"].isin(st.session_state.tickets_tildados)) &
-                    (~df_recetas["Ya_Tiene_Vale"])
-                ][["Obra Social", "Plan", "N° Ticket", "T.T (Tramitación)"]].copy()
-
-                st.warning(
-                    f"📋 **Resumen Final de Cierre:**  \n"
-                    f"• **Recetas Físicas a Enviar:** {total_fisico_enviar}  \n"
-                    f"• **Nuevos Vales a Registrar:** {cant_vales_a_crear}"
-                )
-
-                if st.button("🔒 CONFIRMAR Y CERRAR LOTE DEL DÍA", type="primary", use_container_width=True):
-                    tickets_duplicados_intentados = [t for t in st.session_state.tickets_tildados if t in dict_vales_existentes]
-                    
-                    if tickets_duplicados_intentados:
-                        st.error(f"⛔ ERROR DE SEGURIDAD: Los siguientes tickets ya existen en el repositorio: {', '.join(tickets_duplicados_intentados)}.")
-                    else:
-                        cant_existentes = len(df_vales_repo)
-                        nuevos_vales = []
-                        
-                        for i, (_, fila) in enumerate(df_seleccionados.iterrows()):
-                            nuevos_vales.append({
-                                "ID_Vale": f"VALE-{cant_existentes + i + 1:04d}",
-                                "ID_Lote": id_lote_actual,
-                                "Sucursal": usr_actual["nombre"],
-                                "Fecha_Origen": str(fecha_carga),
-                                "Obra_Social": fila["Obra Social"],
-                                "Plan": fila["Plan"],
-                                "N_Ticket": fila["N° Ticket"],
-                                "TT_Tramitacion": fila["T.T (Tramitación)"],
-                                "Motivo": motivo_general,
-                                "Estado": "PENDIENTE",
-                                "Fecha_Resolucion": "-",
-                                "Observacion": "-",
-                            })
-
-                        if nuevos_vales:
-                            df_vales_actualizado = pd.concat([df_vales_repo, pd.DataFrame(nuevos_vales)], ignore_index=True)
-                            guardar_json(df_vales_actualizado, ARCHIVO_VALES)
-
-                    nuevo_lote = {
-                        "id_lote": id_lote_actual,
-                        "sucursal": usr_actual["nombre"],
-                        "fecha_carga": str(fecha_carga),
-                        "total_recetas": total_recetas_zweb,
-                        "fisico_enviado": total_fisico_enviar,
-                        "vales_generados": cant_vales_a_crear,
-                        "estado_lote": "ENVIADO",
-                        "desglose_obra_social": json.dumps(conteo_real_dict, ensure_ascii=False),
-                        "detalle_recetas_fisicas": json.dumps(df_recetas_fisicas_enviadas.to_dict(orient="records"), ensure_ascii=False)
-                    }
-
-                    # En lugar de guardar en el DataFrame local y llamar a guardar_json, guardás directamente en Supabase:
-                    supabase.table("cargas").upsert(nuevo_lote).execute()
-                        
-                    st.session_state.tickets_tildados.clear()
-                    mostrar_konyu("konyu_ok.png", caption="¡Lote Cerrado!", width=100)
-                    st.success(f"🎉 ¡Lote {id_lote_actual} CERRADO Y ENVIADO con éxito!")
-                    st.rerun()
+            st.session_state.tickets_tildados.clear()
+            mostrar_konyu("konyu_ok.png", caption="¡Lote Cerrado!", width=100)
+            st.success(f"🎉 ¡Lote {id_lote_actual} CERRADO Y ENVIADO con éxito!")
+            st.rerun()
 
 
 # 7. SUCURSAL - Vales e Histórico
