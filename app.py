@@ -712,17 +712,20 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
                             df_vales_actualizado = pd.concat([df_vales_repo, pd.DataFrame(nuevos_vales)], ignore_index=True)
                             guardar_json(df_vales_actualizado, ARCHIVO_VALES)
 
-                        nuevo_lote = {
-                            "ID_Lote": id_lote_actual,
-                            "Sucursal": usr_actual["nombre"],
-                            "Fecha_Carga": str(fecha_carga),
-                            "Total_Recetas": total_recetas_zweb,
-                            "Fisico_Enviado": total_fisico_enviar,
-                            "Vales_Generados": cant_vales_a_crear,
-                            "Estado_Lote": "ENVIADO",
-                            "Desglose_Obra_Social": json.dumps(conteo_real_dict, ensure_ascii=False),
-                            "Detalle_Recetas_Fisicas": json.dumps(df_recetas_fisicas_enviadas.to_dict(orient="records"), ensure_ascii=False),
-                        }
+                    nuevo_lote = {
+                        "id_lote": id_lote_actual,
+                        "sucursal": usr_actual["nombre"],
+                        "fecha_carga": str(fecha_carga),
+                        "total_recetas": total_recetas_zweb,
+                        "fisico_enviado": total_fisico_enviar,
+                        "vales_generados": cant_vales_a_crear,
+                        "estado_lote": "ENVIADO",
+                        "desglose_obra_social": json.dumps(conteo_real_dict, ensure_ascii=False),
+                        "detalle_recetas_fisicas": json.dumps(df_recetas_fisicas_enviadas.to_dict(orient="records"), ensure_ascii=False)
+                    }
+
+                        # En lugar de guardar en el DataFrame local y llamar a guardar_json, guardás directamente en Supabase:
+                        supabase.table("cargas").upsert(nuevo_lote).execute()
                         df_cargas_actualizado = pd.concat([df_cargas, pd.DataFrame([nuevo_lote])], ignore_index=True).drop_duplicates(subset=["ID_Lote"])
                         guardar_json(df_cargas_actualizado, ARCHIVO_CARGAS)
 
