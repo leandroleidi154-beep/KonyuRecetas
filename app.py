@@ -486,8 +486,8 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
     id_lote_actual = f"LOTE-{usr_actual['username'].upper()}-{fecha_carga.strftime('%Y%m%d')}"
 
         # Consulta a Supabase para traer la lista de cargas
-    res_cargas = supabase.table("cargas").select("*").execute()
-    df_cargas = pd.DataFrame(res_cargas.data) if res_cargas.data else pd.DataFrame()
+        res_cargas = supabase.table("cargas").select("*").execute()
+        df_cargas = pd.DataFrame(res_cargas.data) if res_cargas.data else pd.DataFrame()
         
         # Buscar si existe el lote actual
         if not df_cargas.empty and "id_lote" in df_cargas.columns:
