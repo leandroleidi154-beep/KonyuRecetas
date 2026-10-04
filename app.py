@@ -724,15 +724,13 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
                         "detalle_recetas_fisicas": json.dumps(df_recetas_fisicas_enviadas.to_dict(orient="records"), ensure_ascii=False)
                     }
 
-                        # En lugar de guardar en el DataFrame local y llamar a guardar_json, guardás directamente en Supabase:
+                    # En lugar de guardar en el DataFrame local y llamar a guardar_json, guardás directamente en Supabase:
                     supabase.table("cargas").upsert(nuevo_lote).execute()
-                        df_cargas_actualizado = pd.concat([df_cargas, pd.DataFrame([nuevo_lote])], ignore_index=True).drop_duplicates(subset=["ID_Lote"])
-                        guardar_json(df_cargas_actualizado, ARCHIVO_CARGAS)
-
-                        st.session_state.tickets_tildados.clear()
-                        mostrar_konyu("konyu_ok.png", caption="¡Lote Cerrado!", width=100)
-                        st.success(f"🎉 ¡Lote {id_lote_actual} CERRADO Y ENVIADO con éxito!")
-                        st.rerun()
+                        
+                    st.session_state.tickets_tildados.clear()
+                    mostrar_konyu("konyu_ok.png", caption="¡Lote Cerrado!", width=100)
+                    st.success(f"🎉 ¡Lote {id_lote_actual} CERRADO Y ENVIADO con éxito!")
+                    st.rerun()
 
 
 # 7. SUCURSAL - Vales e Histórico
