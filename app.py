@@ -726,7 +726,9 @@ if not lote_cerrado.empty:
                 f"Lote `{id_lote_actual}` fue cancelado/eliminado correctamente."
             )
             st.rerun()
-    # 🛑 Le decimos a Streamlit que si el lote ya estaba cerrado, TERMINE ACÁ
+# Le decimos a Streamlit que si el lote ya estaba cerrado, TERMINE ACÁ
+if not lote_cerrado.empty:
+    st.info(f"🔒 El lote `{id_lote_actual}` ya fue cerrado y procesado.")
     st.stop()
 
     if archivo_csv is not None:
