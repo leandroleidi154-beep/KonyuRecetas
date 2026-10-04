@@ -6,6 +6,13 @@ import re
 import pandas as pd
 import streamlit as st
 
+from supabase import create_client, Client
+
+# Inicializar cliente de Supabase usando los secrets de Streamlit
+url: str = st.secrets["supabase"]["SUPABASE_URL"]
+key: str = st.secrets["supabase"]["SUPABASE_KEY"]
+supabase: Client = create_client(url, key)
+
 # Importaciones para ReportLab (PDF)
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -77,21 +84,39 @@ COLUMNAS_CARGAS = [
 USUARIOS_BASE = {
     "admin": {"pass": "admin123", "nombre": "Administración Central", "rol": "Mutuales"}
 }
-# --- PERSISTENCIA DE USUARIOS ---
-ARCHIVO_USUARIOS = "usuarios.json"
+# --- PERSISTENCIA DE USUARIOS (SUPABASE) ---
 def cargar_usuarios():
-    if os.path.exists(ARCHIVO_USUARIOS):
-        try:
-            with open(ARCHIVO_USUARIOS, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return USUARIOS_BASE
-    return USUARIOS_BASE
+    """Lee todos los usuarios desde la tabla 'usuarios' en Supabase."""
+    try:
+        response = supabase.table("usuarios").select("*").execute()
+        usuarios_dict = {}
+        for user in response.data:
+            usuarios_dict[user["username"]] = {
+                "nombre": user["nombre"],
+                "pass": user["pass"],
+                "rol": user["rol"]
+            }
+        return usuarios_dict if usuarios_dict else USUARIOS_BASE
+    except Exception as e:
+        st.error(f"Error al conectar con la base de datos: {e}")
+        return USUARIOS_BASE
 
 def guardar_usuarios_dict(dict_usr):
-    with open(ARCHIVO_USUARIOS, "w", encoding="utf-8") as f:
-        json.dump(dict_usr, f, ensure_ascii=False, indent=4)
-
+    """Guarda/actualiza los usuarios directamente en Supabase."""
+    try:
+        datos = []
+        for username, data in dict_usr.items():
+            datos.append({
+                "username": username,
+                "nombre": data["nombre"],
+                "pass": data["pass"],
+                "rol": data["rol"]
+            })
+        supabase.table("usuarios").upsert(datos).execute()
+        return True
+    except Exception as e:
+        st.error(f"Error al guardar en la base de datos: {e}")
+        return False
 # --- PEGAR ACÁ (ENTRE LÍNEA 93 Y 94) ---
 def render_gestion_usuarios():
     st.title("👤 Gestión y Alta de Usuarios")
