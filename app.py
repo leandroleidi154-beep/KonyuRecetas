@@ -675,57 +675,58 @@ else:
 
 if not lote_cerrado.empty:
     lote_row = lote_cerrado.iloc[0]
-    estado_lote_s = lote_row.get("estado_lote", "PENDIENTE")
-    st.success(
-        f"🔒 El Lote para la fecha **{fecha_carga}** (`{id_lote_actual}`) se encuentra **CERRADO Y PROCESADO**. Estado: **{estado_lote_s}**."
-    )
+    estado_lote_s = str(lote_row.get("estado_lote", "PENDIENTE")).upper()
 
-    c_i1, c_i2, c_i3 = st.columns(3)
-    c_i1.metric("Total Recetas Zweb", lote_row.get("total_recetas", 0))
-    c_i2.metric("Físico Enviado", lote_row.get("fisico_enviado", 0))
-    c_i3.metric("Vales Registrados", lote_row.get("vales_generados", 0))
-
-    st.divider()
-    df_vales_repo = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
-    vales_del_lote = (
-        df_vales_repo[df_vales_repo["ID_Lote"] == id_lote_actual]
-        if not df_vales_repo.empty
-        else pd.DataFrame()
-    )
-
-    df_resumen_lote = preparar_df_resumen(lote_row.get("desglose_obra_social", "{}"))
-    df_recetas_fisicas_lote = preparar_df_recetas_fisicas(
-        lote_row.get("detalle_recetas_fisicas", "[]")
-    )
-
-    col_pdf, col_del = st.columns([3, 2])
-
-    with col_pdf:
-        pdf_bytes = generar_pdf_cierre(
-            df_resumen_lote,
-            df_recetas_fisicas_lote,
-            vales_del_lote,
-            usr_actual["nombre"],
-            str(fecha_carga),
+    # Solo mostramos la vista de lote cerrado si el estado es CERRADO o ENVIADO
+    if estado_lote_s in ["CERRADO", "ENVIADO"]:
+        st.success(
+            f"🔒 El Lote para la fecha **{fecha_carga}** (`{id_lote_actual}`) se encuentra **{estado_lote_s}**."
         )
-        st.download_button(
-            "📄 Descargar Planilla PDF de Cierre de este Lote",
-            data=pdf_bytes,
-            file_name=f"Cierre_{usr_actual['username']}_{fecha_carga}.pdf",
-            mime="application/pdf",
-            type="primary",
-            use_container_width=True,
+        c_i1, c_i2, c_i3 = st.columns(3)
+        c_i1.metric("Total Recetas Zweb", lote_row.get("total_recetas", 0))
+        c_i2.metric("Físico Enviado", lote_row.get("fisico_enviado", 0))
+        c_i3.metric("Vales Registrados", lote_row.get("vales_generados", 0))
+        st.divider()
+
+        df_resumen_lote = preparar_df_resumen(
+            lote_row.get("desglose_obra_social", "{}")
+        )
+        df_recetas_fisicas_lote = preparar_df_recetas_fisicas(
+            lote_row.get("detalle_recetas_fisicas", "[]")
         )
 
-    with col_del:
-        if st.button(
-            "🗑 Cancelar / Eliminar Lote", type="secondary", use_container_width=True
-        ):
-            supabase.table("cargas").delete().eq("id_lote", id_lote_actual).execute()
-            st.warning(
-                f"Lote `{id_lote_actual}` fue cancelado/eliminado correctamente."
+        col_pdf, col_del = st.columns([3, 2])
+
+        with col_pdf:
+            pdf_bytes = generar_pdf_cierre(
+                df_resumen_lote,
+                df_recetas_fisicas_lote,
+                vales_del_lote,
+                usr_actual["nombre"],
+                str(fecha_carga),
             )
-            st.rerun()
+            st.download_button(
+                "📄 Descargar Planilla PDF de Cierre de este Lote",
+                data=pdf_bytes,
+                file_name=f"Cierre_{usr_actual['username']}_{fecha_carga}.pdf",
+                mime="application/pdf",
+                type="primary",
+                use_container_width=True,
+            )
+
+        with col_del:
+            if st.button(
+                "🗑️ Cancelar / Eliminar Lote",
+                type="secondary",
+                use_container_width=True,
+            ):
+                supabase.table("cargas").delete().eq(
+                    "id_lote", id_lote_actual
+                ).execute()
+                st.warning("Lote eliminado. Podés volver a cargar.")
+                st.rerun()
+
+        st.stop()
 
 # 1. Primero procesamos el CSV si el usuario subió uno
 if archivo_csv is not None:
