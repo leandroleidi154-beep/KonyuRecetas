@@ -1,0 +1,19 @@
+name: Mantener Streamlit Despierto
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Enviar visita
+        run: |
+          python -c "import urllib.request; urllib.request.urlopen('https://konyu-recetas.streamlit.app/" || true
