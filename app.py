@@ -580,17 +580,17 @@ if not lote_cerrado.empty:
                 c_os1.markdown(f"**{os_nombre}**")
                 c_os2.caption(f"Esperado: {esperado}")
                     
-                    enviado_real = c_os3.number_input(
+                enviado_real = c_os3.number_input(
                         f"Real {os_nombre}", 
                         min_value=0, 
                         max_value=esperado, 
                         value=esperado, 
                         key=f"inp_{os_nombre}"
                     )
-                    conteo_real_dict[os_nombre] = enviado_real
+                conteo_real_dict[os_nombre] = enviado_real
 
-                    diferencia = enviado_real - esperado
-                    if diferencia < 0:
+                diferencia = enviado_real - esperado
+                if diferencia < 0:
                         c_os4.warning(f"⚠ Faltan {abs(diferencia)} receta(s)")
                     else:
                         c_os4.success("✅ OK")
