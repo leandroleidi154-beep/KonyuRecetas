@@ -559,24 +559,24 @@ else:
             col1.metric("Total Recetas Zweb", total_recetas_zweb)
             col2.metric("Vales Ya Registrados (Previos)", vales_preexistentes_count)
 
-                if vales_preexistentes_count > 0:
-                    st.info(f"💡 Se detectaron **{vales_preexistentes_count} receta(s)** en el CSV que ya fueron convertidas en Vale anteriormente.")
+            if vales_preexistentes_count > 0:
+                st.info(f"💡 Se detectaron **{vales_preexistentes_count}** receta(s)** en el CSV que ya fueron convertidas en Vale anteriormente.")
 
-                st.divider()
+            st.divider()
 
-                # PASO 1
-                st.subheader("1. Conteo Físico por Obra Social")
-                resumen = df_recetas[~df_recetas["Ya_Tiene_Vale"]].groupby("Obra Social").size().reset_index(name="Físico Esperado")
+            # PASO 1
+            st.subheader("1. Conteo Físico por Obra Social")
+            resumen = df_recetas[~df_recetas["Ya_Tiene_Vale"]].groupby("Obra Social").size().reset_index(name="Físico Esperado")
 
-                conteo_real_dict = {}
+            conteo_real_dict = {}
 
-                for idx, row in resumen.iterrows():
-                    os_nombre = row["Obra Social"]
-                    esperado = row["Físico Esperado"]
+            for idx, row in resumen.iterrows():
+                os_nombre = row["Obra Social"]
+                esperado = row["Físico Esperado"]
 
-                    c_os1, c_os2, c_os3, c_os4 = st.columns([3, 2, 2, 3])
-                    c_os1.markdown(f"**{os_nombre}**")
-                    c_os2.caption(f"Esperado: {esperado}")
+                c_os1, c_os2, c_os3, c_os4 = st.columns([3, 2, 2, 3])
+                c_os1.markdown(f"**{os_nombre}**")
+                c_os2.caption(f"Esperado: {esperado}")
                     
                     enviado_real = c_os3.number_input(
                         f"Real {os_nombre}", 
