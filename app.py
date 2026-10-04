@@ -536,29 +536,28 @@ else:
     if archivo_csv is not None:
         df_recetas = procesar_csv(archivo_csv)
 
-            if not df_recetas.empty:
-                df_vales_repo = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
-                df_vales_sucu_historial = df_vales_repo[df_vales_repo["Sucursal"] == usr_actual["nombre"]] if not df_vales_repo.empty else pd.DataFrame()
-                
-                dict_vales_existentes = {}
-                if not df_vales_sucu_historial.empty:
-                    for _, row_v in df_vales_sucu_historial.iterrows():
-                        dict_vales_existentes[row_v["N_Ticket"]] = {
-                            "ID_Vale": row_v["ID_Vale"],
-                            "Fecha": row_v["Fecha_Origen"],
-                            "Estado": row_v["Estado"],
-                        }
+        if not df_recetas.empty:
+            df_vales_repo = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
+            df_vales_sucu_historial = df_vales_repo[df_vales_repo["Sucursal"] == usr_actual["nombre"]] if not df_vales_repo.empty else pd.DataFrame()
 
-                df_recetas["Ya_Tiene_Vale"] = df_recetas["N° Ticket"].isin(dict_vales_existentes.keys())
+            dict_vales_existentes = {}
+            if not df_vales_sucu_historial.empty:
+                for _, row_v in df_vales_sucu_historial.iterrows():
+                    dict_vales_existentes[row_v["N_Ticket"]] = {
+                        "ID_Vale": row_v["ID_Vale"],
+                        "Fecha": row_v["Fecha_Origen"],
+                        "Estado": row_v["Estado"],
+                    }
 
-                total_recetas_zweb = len(df_recetas)
-                vales_preexistentes_count = df_recetas["Ya_Tiene_Vale"].sum()
-                esperado_fisico = total_recetas_zweb - vales_preexistentes_count
+            df_recetas["Ya_Tiene_Vale"] = df_recetas["N° Ticket"].isin(dict_vales_existentes.keys())
 
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Total Recetas Zweb", total_recetas_zweb)
-                col2.metric("Vales Ya Registrados (Previos)", vales_preexistentes_count)
-                col3.metric("Físico Esperado", esperado_fisico)
+            total_recetas_zweb = len(df_recetas)
+            vales_preexistentes_count = df_recetas["Ya_Tiene_Vale"].sum()
+            esperado_fisico = total_recetas_zweb - vales_preexistentes_count
+
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total Recetas Zweb", total_recetas_zweb)
+            col2.metric("Vales Ya Registrados (Previos)", vales_preexistentes_count)
 
                 if vales_preexistentes_count > 0:
                     st.info(f"💡 Se detectaron **{vales_preexistentes_count} receta(s)** en el CSV que ya fueron convertidas en Vale anteriormente.")
