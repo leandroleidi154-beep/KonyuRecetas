@@ -1127,39 +1127,34 @@ elif usr_actual["rol"] == "Sucursal" and menu == "📜 Gestión de Vales e Hist�
                         value=f"Gestión realizada el {fecha_hoy_str}",
                     )
 
-                    if col_btn1.button(
-                        "🚀 REGISTRAR ENVÍO", type="primary", use_container_width=True
-                    ):
-                        for id_v in vales_seleccionados_ids:
-                            idx = df_vales[df_vales["ID_Vale"] == id_v].index[0]
-                            df_vales.at[idx, "Estado"] = "ENVIADO"
-                            df_vales.at[idx, "Fecha_Resolucion"] = fecha_hoy_str
-                            df_vales.at[idx, "Observacion"] = obs_nota
+                if col_btn1.button(
+                    "🚀 REGISTRAR ENVÍO", type="primary", use_container_width=True
+                ):
+                    for id_v in vales_seleccionados_ids:
+                        # 1. Actualización local en DataFrame (para mantener consistencia si se usa más abajo)
+                        idx = df_vales[df_vales["ID_Vale"] == id_v].index
+                        if not idx.empty:
+                            df_vales.at[idx[0], "Estado"] = "ENVIADO"
+                            df_vales.at[idx[0], "Fecha_Resolucion"] = fecha_hoy_str
+                            df_vales.at[idx[0], "Observacion"] = obs_nota
 
-                        guardar_json(df_vales, ARCHIVO_VALES)
-                        st.success(
-                            f"¡Se registraron {len(vales_seleccionados_ids)} vales como ENVIADOS!"
-                        )
-                        st.rerun()
+                        # 2. Actualización directa en la base de datos de Supabase
+                        supabase.table("vales").update(
+                            {
+                                "Estado": "ENVIADO",
+                                "Fecha_Resolucion": fecha_hoy_str,
+                                "Observacion": obs_nota,
+                            }
+                        ).eq("ID_Vale", id_v).execute()
 
-                    if col_btn2.button(
-                        "❌ ANULAR / DESCHACAR",
-                        type="secondary",
-                        use_container_width=True,
-                    ):
-                        for id_v in vales_seleccionados_ids:
-                            idx = df_vales[df_vales["ID_Vale"] == id_v].index[0]
-                            df_vales.at[idx, "Estado"] = "CANCELADO"
-                            df_vales.at[idx, "Fecha_Resolucion"] = fecha_hoy_str
-                            df_vales.at[idx, "Observacion"] = (
-                                f"Anulado sin enviar: {obs_nota}"
-                            )
+                    # 3. Guardado en JSON diferido (fallback) y limpieza de caché
+                    guardar_json(df_vales, ARCHIVO_VALES)
+                    st.cache_data.clear()
 
-                        guardar_json(df_vales, ARCHIVO_VALES)
-                        st.warning(
-                            f"¡Se marcaron {len(vales_seleccionados_ids)} vales como CANCELADOS!"
-                        )
-                        st.rerun()
+                    st.success(
+                        f"¡Se registraron {len(vales_seleccionados_ids)} vales como ENVIADOS!"
+                    )
+                    st.rerun()
 
     with tab2:
         st.subheader("✅ Registro de Vales Completados y Enviados")
