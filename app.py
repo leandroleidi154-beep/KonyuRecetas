@@ -190,45 +190,43 @@ def render_gestion_usuarios():
         st.dataframe(lista_tabla, use_container_width=True)
 
 
-# LUEGO SIGUE TU CÓDIGO EXISTENTE DE LA LÍNEA 94 EN ADELANTE:
-def cargar_json(filepath, columnas):
-    if os.path.exists(filepath):
-        ...
+# --- CARGA Y GUARDADO DESDE SUPABASE ---
 
 
-def cargar_json(filepath, columnas):
-    if os.path.exists(filepath):
-        try:
-            with open(filepath, "r", encoding="utf-8") as f:
-                content = f.read().strip()
-                if not content:
-                    return pd.DataFrame(columns=columnas)
-                data = json.loads(content)
-                df = pd.DataFrame(data)
-                for col in columnas:
-                    if col not in df.columns:
-                        if col == "Estado_Lote":
-                            df[col] = "PENDIENTE"
-                        elif col in ["Desglose_Obra_Social", "Detalle_Recetas_Fisicas"]:
-                            df[col] = "[]" if col == "Detalle_Recetas_Fisicas" else "{}"
-                        else:
-                            df[col] = "-"
-                return df[columnas]
-        except Exception:
-            return pd.DataFrame(columns=columnas)
-    else:
-        df_vacio = pd.DataFrame(columns=columnas)
-        guardar_json(df_vacio, filepath)
-        return df_vacio
-
-
-def guardar_json(df, filepath):
+def cargar_datos_supabase(tabla, columnas_default=None):
+    """Carga una tabla desde Supabase y la devuelve como DataFrame de pandas."""
     try:
-        data = df.to_dict(orient="records")
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
+        res = supabase.table(tabla).select("*").execute()
+        if res.data:
+            df = pd.DataFrame(res.data)
+            # Asegurar que existan todas las columnas requeridas
+            if columnas_default:
+                for col in columnas_default:
+                    if col not in df.columns:
+                        df[col] = "-"
+            return df
+
+        # Si la tabla está vacía en Supabase, devolver DataFrame con las columnas esperadas
+        if columnas_default:
+            return pd.DataFrame(columns=columnas_default)
+        return pd.DataFrame()
     except Exception as e:
-        st.error(f"Error al guardar datos: {e}")
+        st.error(f"Error al conectar con la tabla {tabla} en Supabase: {e}")
+        if columnas_default:
+            return pd.DataFrame(columns=columnas_default)
+        return pd.DataFrame()
+
+
+def guardar_datos_supabase(tabla, lista_registros):
+    """Inserta o actualiza una lista de diccionarios en Supabase."""
+    try:
+        if lista_registros:
+            supabase.table(tabla).upsert(lista_registros).execute()
+            return True
+        return False
+    except Exception as e:
+        st.error(f"Error al guardar datos en Supabase ({tabla}): {e}")
+        return False
 
 
 # Manejo de Sesión
@@ -656,8 +654,13 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
         f"LOTE-{usr_actual['username'].upper()}-{fecha_carga.strftime('%Y%m%d')}"
     )
 
-    df_cargas = cargar_json(ARCHIVO_CARGAS, COLUMNAS_CARGAS)
-    lote_cerrado = df_cargas[df_cargas["ID_Lote"] == id_lote_actual]
+    df_cargas = cargar_datos_supabase("cargas", COLUMNAS_CARGAS)
+    col_id_lote = "id_lote" if "id_lote" in df_cargas.columns else "ID_Lote"
+    lote_cerrado = (
+        df_cargas[df_cargas[col_id_lote] == id_lote_actual]
+        if not df_cargas.empty
+        else pd.DataFrame()
+    )
 
     if not lote_cerrado.empty:
         lote_row = lote_cerrado.iloc[0]
@@ -672,7 +675,7 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
         c_i3.metric("Vales Registrados", lote_row["Vales_Generados"])
 
         st.divider()
-        df_vales_repo = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
+        df_vales_repo = cargar_datos_supabase("vales", COLUMNAS_VALES)
         vales_del_lote = df_vales_repo[df_vales_repo["ID_Lote"] == id_lote_actual]
 
         df_resumen_lote = preparar_df_resumen(
@@ -703,14 +706,16 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
         if col_del.button(
             "🗑 Cancelar / Eliminar Lote", type="secondary", use_container_width=True
         ):
-            guardar_json(df_cargas_nuevas, ARCHIVO_CARGAS)
-
-            df_vales_nuevos = df_vales_repo[df_vales_repo["ID_Lote"] != id_lote_actual]
-            guardar_json(df_vales_nuevos, ARCHIVO_VALES)
-
-            st.warning(
-                f"Lote `{id_lote_actual}` fue cancelado/eliminado correctamente."
-            )
+            try:
+                supabase.table("cargas").delete().eq(
+                    "id_lote", id_lote_actual
+                ).execute()
+                supabase.table("vales").delete().eq("ID_Lote", id_lote_actual).execute()
+                st.warning(
+                    f"Lote `{id_lote_actual}` fue cancelado/eliminado correctamente."
+                )
+            except Exception as e:
+                st.error(f"Error al eliminar en Supabase: {e}")
             st.rerun()
 
     else:
@@ -718,12 +723,18 @@ if usr_actual["rol"] == "Sucursal" and "Carga Diaria de Lote" in menu:
             df_recetas = procesar_csv(archivo_csv)
 
             if not df_recetas.empty:
-                df_vales_repo = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
-                df_vales_sucu_historial = (
-                    df_vales_repo[df_vales_repo["Sucursal"] == usr_actual["nombre"]]
-                    if not df_vales_repo.empty
-                    else pd.DataFrame()
-                )
+                df_vales_repo = cargar_datos_supabase("vales", COLUMNAS_VALES)
+                if not df_vales_repo.empty:
+                    col_suc = (
+                        "sucursal"
+                        if "sucursal" in df_vales_repo.columns
+                        else "Sucursal"
+                    )
+                    df_vales_sucu_historial = df_vales_repo[
+                        df_vales_repo[col_suc] == usr_actual["nombre"]
+                    ]
+                else:
+                    df_vales_sucu_historial = pd.DataFrame()
 
                 dict_vales_existentes = {}
                 if not df_vales_sucu_historial.empty:
@@ -972,10 +983,10 @@ if st.button(
                 )
 
             if nuevos_vales:
-                df_vales_actualizado = pd.concat(
-                    [df_vales_repo, pd.DataFrame(nuevos_vales)], ignore_index=True
+                records_vales = (
+                    pd.DataFrame(nuevos_vales).astype(str).to_dict(orient="records")
                 )
-                guardar_json(df_vales_actualizado, ARCHIVO_VALES)
+                supabase.table("vales").upsert(records_vales).execute()
 
         # 2. Guardar SIEMPRE el estado del lote en Supabase (tenga 0 o más vales nuevos)
         nuevo_lote = {
@@ -1008,8 +1019,8 @@ elif usr_actual["rol"] == "Sucursal" and menu == "📜 Gestión de Vales e Hist�
     st.title("📜 Gestión de Vales e Histórico de Cargas")
     st.write(f"Sucursal: **{usr_actual['nombre']}**")
 
-    df_cargas = cargar_json(ARCHIVO_CARGAS, COLUMNAS_CARGAS)
-    df_vales = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
+    df_cargas = cargar_datos_supabase("cargas", COLUMNAS_CARGAS)
+    df_vales = cargar_datos_supabase("vales", COLUMNAS_VALES)
 
     df_cargas_sucu = df_cargas[df_cargas["Sucursal"] == usr_actual["nombre"]]
     df_vales_sucu = df_vales[df_vales["Sucursal"] == usr_actual["nombre"]]
@@ -1148,7 +1159,6 @@ elif usr_actual["rol"] == "Sucursal" and menu == "📜 Gestión de Vales e Hist�
                         ).eq("ID_Vale", id_v).execute()
 
                     # 3. Guardado en JSON diferido (fallback) y limpieza de caché
-                    guardar_json(df_vales, ARCHIVO_VALES)
                     st.cache_data.clear()
 
                     st.success(
@@ -1270,8 +1280,8 @@ elif usr_actual["rol"] == "Mutuales" and menu == "📥 Recepción de Lotes por S
     st.title("📥 Mesa de Entrada - Recepción Física de Lotes")
     st.write("Control directo de paquetes físicos y lotes enviados por las sucursales.")
 
-    df_cargas_global = cargar_json(ARCHIVO_CARGAS, COLUMNAS_CARGAS)
-    df_vales_global = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
+    df_cargas_global = cargar_datos_supabase("cargas", COLUMNAS_CARGAS)
+    df_vales_global = cargar_datos_supabase("vales", COLUMNAS_VALES)
 
     usuarios_sistema = cargar_usuarios()
     sucursales_base = [
@@ -1343,12 +1353,13 @@ elif usr_actual["rol"] == "Mutuales" and menu == "📥 Recepción de Lotes por S
                         key=f"btn_recibido_{id_lote}",
                         type="primary",
                     ):
-                        idx_l = df_cargas_global[
-                            df_cargas_global["ID_Lote"] == id_lote
-                        ].index[0]
-                        df_cargas_global.at[idx_l, "Estado_Lote"] = "RECIBIDO"
-                        guardar_json(df_cargas_global, ARCHIVO_CARGAS)
-                        st.success(f"¡Lote {id_lote} confirmado como RECIBIDO!")
+                        try:
+                            supabase.table("cargas").update(
+                                {"estado_lote": "RECIBIDO"}
+                            ).eq("id_lote", id_lote).execute()
+                            st.success(f"¡Lote {id_lote} confirmado como RECIBIDO!")
+                        except Exception as e:
+                            st.error(f"Error al actualizar estado en Supabase: {e}")
                         st.rerun()
                 else:
                     c_m4.success("📦 Lote procesado y verificado por Mutuales.")
@@ -1418,7 +1429,11 @@ elif usr_actual["rol"] == "Mutuales" and menu == "📦 Auditoría Global de Vale
     st.title("📦 Panel General de Auditoría de Vales")
     st.write("Módulo de consulta unificada por sucursal y fecha de origen.")
 
-    df_vales_global = cargar_json(ARCHIVO_VALES, COLUMNAS_VALES)
+    df_vales_global = cargar_datos_supabase("vales", COLUMNAS_VALES)
+
+    if not df_vales_global.empty:
+    col_suc = "sucursal" if "sucursal" in df_vales_global.columns else "Sucursal"
+    df_vales_global["Sucursal"] = df_vales_global[col_suc]
 
     if df_vales_global.empty:
         mostrar_konyu("konyu_empty.png", caption="Sin vales registrados", width=100)
