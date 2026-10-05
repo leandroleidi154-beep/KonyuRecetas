@@ -1380,7 +1380,6 @@ elif usr_actual["rol"] == "Mutuales" and menu == "📥 Recepción de Lotes por S
                     st.info(
                         "ℹ Todos los vales de este lote están resueltos o no requirió vales."
                     )
-
                 if vales_lote.empty:
                     st.caption("No se generaron vales en este lote.")
                 else:
@@ -1431,7 +1430,7 @@ elif usr_actual["rol"] == "Mutuales" and menu == "📦 Auditoría Global de Vale
 
     df_vales_global = cargar_datos_supabase("vales", COLUMNAS_VALES)
 
-    if not df_vales_global.empty:
+if not df_vales_global.empty:
     col_suc = "sucursal" if "sucursal" in df_vales_global.columns else "Sucursal"
     df_vales_global["Sucursal"] = df_vales_global[col_suc]
 
