@@ -1428,27 +1428,27 @@ elif usr_actual["rol"] == "Mutuales" and menu == "📦 Auditoría Global de Vale
     st.title("📦 Panel General de Auditoría de Vales")
     st.write("Módulo de consulta unificada por sucursal y fecha de origen.")
 
-    df_vales_global = cargar_datos_supabase("vales", COLUMNAS_VALES)
+    try:
+        df_vales_global = cargar_datos_supabase("vales", COLUMNAS_VALES)
+    except Exception as e:
+        st.error(f"Error al cargar la tabla 'vales': {e}")
+        df_vales_global = pd.DataFrame(columns=COLUMNAS_VALES)
 
-if not df_vales_global.empty:
-    col_suc = "sucursal" if "sucursal" in df_vales_global.columns else "Sucursal"
-    df_vales_global["Sucursal"] = df_vales_global[col_suc]
+    if not df_vales_global.empty:
+        col_suc = "sucursal" if "sucursal" in df_vales_global.columns else "Sucursal"
+        df_vales_global["Sucursal"] = df_vales_global[col_suc]
 
     if df_vales_global.empty:
         mostrar_konyu("konyu_empty.png", caption="Sin vales registrados", width=100)
         st.info("No hay vales registrados en el sistema.")
     else:
+        sucursales = [
+            USUARIOS_BASE[u]["nombre"]
+            for u in USUARIOS_BASE
+            if USUARIOS_BASE[u]["rol"] == "Sucursal"
+        ]
         sucursales_list = sorted(
-            list(
-                set(
-                    [
-                        USUARIOS_BASE[u]["nombre"]
-                        for u in USUARIOS_BASE
-                        if USUARIOS_BASE[u]["rol"] == "Sucursal"
-                    ]
-                    + df_vales_global["Sucursal"].tolist()
-                )
-            )
+            list(set(sucursales + df_vales_global["Sucursal"].tolist()))
         )
 
         st.subheader("🔎 Selección de Sucursal y Fecha")
