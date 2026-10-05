@@ -967,18 +967,18 @@ if st.button(
             for i, (_, fila) in enumerate(df_seleccionados.iterrows()):
                 nuevos_vales.append(
                     {
-                        "ID_Vale": f"VALE-{cant_existentes + i + 1:04d}",
-                        "ID_Lote": id_lote_actual,
-                        "Sucursal": usr_actual["nombre"],
-                        "Fecha_Origen": str(fecha_carga),
-                        "Obra_Social": fila["Obra Social"],
-                        "Plan": fila["Plan"],
-                        "N_Ticket": fila["N° Ticket"],
-                        "TT_Tramitacion": fila["T.T (Tramitación)"],
-                        "Motivo": motivo_general,
-                        "Estado": "PENDIENTE",
-                        "Fecha_Resolucion": "-",
-                        "Observacion": "-",
+                        "id_vale": f"VALE-{cant_existentes + i + 1:04d}",
+                        "id_lote": id_lote_actual,
+                        "sucursal": usr_actual["nombre"],
+                        "fecha_origen": str(fecha_carga),
+                        "obra_social": fila["Obra Social"],
+                        "plan": fila["Plan"],
+                        "n_ticket": fila["Nº Ticket"],
+                        "tt_tramitacion": fila["T.T (Tramitación)"],
+                        "motivo": motivo_general,
+                        "estado": "PENDIENTE",
+                        "fecha_resolucion": "-",
+                        "observacion": "-",
                     }
                 )
 
@@ -986,7 +986,11 @@ if st.button(
                 records_vales = (
                     pd.DataFrame(nuevos_vales).astype(str).to_dict(orient="records")
                 )
-                supabase.table("vales").upsert(records_vales).execute()
+
+                try:
+                    supabase.table("vales").upsert(records_vales_clean).execute()
+                except Exception as e:
+                    st.error(f"Error al guardar vales en Supabase: {e}")
 
         # 2. Guardar SIEMPRE el estado del lote en Supabase (tenga 0 o más vales nuevos)
         nuevo_lote = {
